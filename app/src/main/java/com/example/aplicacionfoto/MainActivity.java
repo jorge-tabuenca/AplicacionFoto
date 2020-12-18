@@ -10,6 +10,8 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -20,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private Button boton;
     private ImageView imageView;
     private final int REQUEST_TAKE_PHOTO = 1;
-    private String mAbsolutePath = "";
+    String currentPhotoPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,8 +31,6 @@ public class MainActivity extends AppCompatActivity {
 
         boton = findViewById(R.id.button);
         imageView = findViewById(R.id.imageView);
-
-        imageView.setImageURI(takeLastPhoto());
 
         boton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -54,9 +54,13 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
 
-            Uri photoUri = FileProvider.getUriForFile(this, "com.example.aplicacionfoto.provider", photoFile);
-            takePicture.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
-            startActivityForResult(takePicture, REQUEST_TAKE_PHOTO);
+            if(photoFile != null){
+                Uri photoUri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID+ ".provider", photoFile);
+                takePicture.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+                startActivityForResult(takePicture, REQUEST_TAKE_PHOTO);
+            }else{
+                Toast.makeText(this, "CAMARA NO DISPONIBLE", Toast.LENGTH_SHORT).show();
+            }
     }
 
     @Override
@@ -65,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == REQUEST_TAKE_PHOTO && resultCode == RESULT_OK) {
 
+            File f = new File(currentPhotoPath);
             imageView.setImageURI(takeLastPhoto());
 
         }
@@ -73,16 +78,14 @@ public class MainActivity extends AppCompatActivity {
     private Uri takeLastPhoto() {
 
         Uri uri = null;
-
-        File f = new File("/sdcard/Android/data/com.example.aplicacionfoto/files/Pictures");
+        File f = new File(currentPhotoPath);
 
         if(f != null){
-
-            uri = FileProvider.getUriForFile(this, "com.example.aplicacionfoto.provider", f.listFiles()[f.listFiles().length-1]);
+            uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", f);
+        }else{
+            uri = null;
         }
-
         return uri;
-
     }
 
     private File createPhotoFile() throws IOException {
@@ -95,8 +98,8 @@ public class MainActivity extends AppCompatActivity {
           imageFileName, ".jpg",
                 storageFile
         );
+        currentPhotoPath = photoFile.getAbsolutePath();
 
-        mAbsolutePath = photoFile.getAbsolutePath();
         return photoFile;
     }
 }
